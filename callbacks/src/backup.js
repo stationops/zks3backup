@@ -56,6 +56,12 @@ const downloadSnapshot = (url, destinationPath) => {
     return new Promise((resolve, reject) => {
         const file = createWriteStream(destinationPath);
 
+        const options = {
+            headers: {
+                'Authorization': 'digest root:root_passwd'
+            }
+        }
+
         https.get(url, options, (response) => {
             if (response.statusCode !== 200) {
                 reject(new Error(`Failed to get snapshot: ${response.statusCode}`));
