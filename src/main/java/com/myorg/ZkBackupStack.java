@@ -45,14 +45,15 @@ public class ZkBackupStack extends Stack {
                         "s3:ListBucket",
                         "s3:DeleteObject"
                 ))
-
                 .resources(List.of("*"))
                 .build());
 
 
-        // Create the execution role for the task definition
         Role executionRole = Role.Builder.create(this, "ZkBackupRole")
                 .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+                .managedPolicies(List.of(
+                        ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole")
+                ))
                 .build();
 
         executionRole.addToPolicy(policyStatement);

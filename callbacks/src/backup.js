@@ -1,5 +1,5 @@
 import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
-import https from 'https';
+import http from 'http';
 import { createWriteStream, promises as fsPromises, unlink } from 'fs';
 
 // Initialize the S3 client
@@ -8,7 +8,7 @@ const s3Client = new S3Client({ region: process.env.REGION });
 export const backup = async (event, context) => {
     const zookeeperSnapshotUrl = process.env.ZK_ADMIN_URL + '/commands/snapshot?streaming=true';
 
-    const snapshotFilePath = '/tmp/zookeeper-snapshot.tgz';
+    const snapshotFilePath = '/tmp/zookeeper-snapshot';
     const s3BucketName = process.env.ZK_BACK_FOLDER_NAME;
     const currentDate = getCurrentDate(); // Format: yyyymmdd
     const s3Key = `zookeeper-snapshot-${currentDate}.tgz`;
@@ -33,7 +33,7 @@ export const backup = async (event, context) => {
         console.log(`Snapshot uploaded successfully to S3: ${s3Key}`);
 
         // Step 4: Clean up the local file after upload
-        await unlink(snapshotFilePath);
+        await unlink(snapshotFilePath, () => {});
 
         // Step 5: Delete old objects in the bucket
         await deleteOldObjects(s3BucketName, 'backups/', 10);
@@ -56,13 +56,18 @@ const downloadSnapshot = (url, destinationPath) => {
     return new Promise((resolve, reject) => {
         const file = createWriteStream(destinationPath);
 
+        // Extract hostname, port, and path from the URL
+        const { hostname, port, pathname, search } = new URL(process.env.ZK_ADMIN_URL);
         const options = {
+            hostname: hostname,
+            port: port,
+            path: pathname + search,
             headers: {
                 'Authorization': 'digest root:root_passwd'
             }
-        }
+        };
 
-        https.get(url, options, (response) => {
+        http.get(options, (response) => {
             if (response.statusCode !== 200) {
                 reject(new Error(`Failed to get snapshot: ${response.statusCode}`));
                 return;
@@ -75,11 +80,11 @@ const downloadSnapshot = (url, destinationPath) => {
             });
 
             file.on('error', (err) => {
-                unlink(destinationPath); // Delete the file async if an error occurs
+                unlink(destinationPath, () => reject(err)); // Delete the file async if an error occurs
                 reject(err);
             });
         }).on('error', (err) => {
-            unlink(destinationPath); // Delete the file async if an error occurs
+            unlink(destinationPath, () => reject(err)); // Delete the file async if an error occurs
             reject(err);
         });
     });
