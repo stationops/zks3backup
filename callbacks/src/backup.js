@@ -8,7 +8,7 @@ const s3Client = new S3Client({ region: process.env.REGION });
 export const backup = async (event, context) => {
     const zookeeperSnapshotUrl = process.env.ZK_ADMIN_URL + '/commands/snapshot?streaming=true';
 
-    const snapshotFilePath = '/tmp/zookeeper-snapshot';
+    const snapshotFilePath = '/tmp/zookeeper-snapshot.tgz';
     const s3BucketName = process.env.ZK_BACK_FOLDER_NAME;
     const currentDate = getCurrentDate(); // Format: yyyymmdd
     const s3Key = `zookeeper-snapshot-${currentDate}.tgz`;
@@ -61,11 +61,13 @@ const downloadSnapshot = (url, destinationPath) => {
         const options = {
             hostname: hostname,
             port: port,
-            path: pathname + search,
+            path: '/commands/snapshot?streaming=true',
             headers: {
                 'Authorization': 'digest root:root_passwd'
             }
         };
+
+        console.log(options)
 
         http.get(options, (response) => {
             if (response.statusCode !== 200) {
