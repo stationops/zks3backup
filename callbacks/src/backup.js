@@ -6,7 +6,6 @@ import { createWriteStream, promises as fsPromises, unlink } from 'fs';
 const s3Client = new S3Client({ region: process.env.REGION });
 
 export const backup = async (event, context) => {
-    const zookeeperSnapshotUrl = process.env.ZK_ADMIN_URL + '/commands/snapshot?streaming=true';
 
     const snapshotFilePath = '/tmp/zookeeper-snapshot.tgz';
     const s3BucketName = process.env.ZK_BACK_FOLDER_NAME;
@@ -15,7 +14,7 @@ export const backup = async (event, context) => {
 
     try {
         // Step 1: Create Zookeeper Snapshot
-        await downloadSnapshot(zookeeperSnapshotUrl, snapshotFilePath);
+        await downloadSnapshot(snapshotFilePath);
 
         // Step 2: Read the snapshot file
         const data = await fsPromises.readFile(snapshotFilePath);
@@ -52,7 +51,7 @@ export const backup = async (event, context) => {
 };
 
 // Helper function to download snapshot using https module
-const downloadSnapshot = (url, destinationPath) => {
+const downloadSnapshot = (destinationPath) => {
     return new Promise((resolve, reject) => {
         const file = createWriteStream(destinationPath);
 
