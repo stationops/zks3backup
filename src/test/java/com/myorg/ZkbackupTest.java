@@ -9,7 +9,7 @@
 // import org.junit.jupiter.api.Test;
 
 // example test. To run these tests, uncomment this file, along with the
-// example resource in java/src/main/java/com/myorg/ZkbackupStack.java
+// example resource in java/src/main/java/com/myorg/ZkBackupStack.java
 // public class ZkbackupTest {
 
 //     @Test
